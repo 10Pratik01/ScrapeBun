@@ -2,7 +2,7 @@ import { ExecutionEnviornment } from "@/lib/types";
 import { ExtractDataWithAiTask } from "../task/ExtractDataWithAi";
 import prisma from "@/lib/prisma";
 import { symmetricDecrypt } from "@/lib/credential";
-import OpenAi from "openai";
+import { GoogleGenAI } from "@google/genai";
 
 export async function ExtractDataWithAiExecutor(
   enviornment: ExecutionEnviornment<typeof ExtractDataWithAiTask>
@@ -13,11 +13,13 @@ export async function ExtractDataWithAiExecutor(
       enviornment.log.error("input -> credentials is not defined");
       return false;
     }
+
     const content = enviornment.getInput("Content");
     if (!content) {
       enviornment.log.error("input -> content is not defined");
       return false;
     }
+
     const prompt = enviornment.getInput("Prompt");
     if (!prompt) {
       enviornment.log.error("input -> prompt is not defined");
@@ -25,69 +27,66 @@ export async function ExtractDataWithAiExecutor(
     }
 
     const credential = await prisma.credential.findUnique({
-      where: {
-        id: credentialId,
-      },
+      where: { id: credentialId },
     });
 
     if (!credential) {
-      enviornment.log.error("Credential no found");
+      enviornment.log.error("Credential not found");
       return false;
     }
 
-    const plainCredentialValue = symmetricDecrypt(credential.value);
-
-    if (!plainCredentialValue) {
+    const apiKey = symmetricDecrypt(credential.value);
+    if (!apiKey) {
       enviornment.log.error("Cannot decrypt credential");
       return false;
     }
 
-    const openAi = new OpenAi({
-      apiKey: plainCredentialValue,
-    });
+    const ai = new GoogleGenAI({ apiKey });
 
-    const response = await openAi.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash", // or gemini-1.5-flash for cheaper/faster, 
+
+      contents: [
         {
-          role: "system",
-          content:
-            "You are a webscraper helper that extracts data from HTML or text. You will be given a piece of text or HTML content as input and also the prompt with the data you have to extract. The response should always be only the extracted data as a JSON array or object, without any additional words or explanations. Analyze the input carefully and extract data precisely based on the prompt. If no data is found, return an empty JSON array. Work only with the provided content and ensure the output is always a valid JSON array without any surrounding text",
+          role: "user",
+          parts: [{ text: content }],
         },
         {
           role: "user",
-          content: content,
-        },
-        {
-          role: "user",
-          content: prompt,
+          parts: [{ text: prompt }],
         },
       ],
-      temperature: 1,
+
+
     });
 
     enviornment.log.info(
-      `Prompt tokens used: ${JSON.stringify(response.usage?.prompt_tokens)}`
+      `Prompt tokens used: ${response.usageMetadata?.promptTokenCount}`
     );
 
     enviornment.log.info(
-      `Completition tokens used: ${JSON.stringify(
-        response.usage?.completion_tokens
-      )}`
+      `Completion tokens used: ${response.usageMetadata?.candidatesTokenCount}`
     );
 
-    const result = response.choices[0].message?.content;
+    const result = response.text?.trim();
 
     if (!result) {
-      enviornment.log.error("Empty response from AI");
+      enviornment.log.error("Empty response from Gemini");
       return false;
     }
 
-    enviornment.setOutput("Extracted Data", JSON.stringify(result));
+    // Optional safety: ensure valid JSON
+    try {
+      JSON.parse(result);
+    } catch {
+      enviornment.log.error("Gemini response is not valid JSON");
+      return false;
+    }
 
+    enviornment.setOutput("Extracted Data", result);
     return true;
   } catch (error: any) {
-    enviornment.log.error(error.message);
+    enviornment.log.error(error.message ?? "Unknown Gemini error");
     return false;
   }
 }
