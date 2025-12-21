@@ -26,17 +26,6 @@ export async function ExtractDataWithAiExecutor(
       return false;
     }
 
-    const provider = enviornment.getInput("Provider");
-    if (!provider) {
-      enviornment.log.error("input -> provider is not defined");
-      return false;
-    }
-    const model = enviornment.getInput("Model");
-    if (!model) {
-      enviornment.log.error("input -> model is not defined");
-      return false;
-    }
-
     const credential = await prisma.credential.findUnique({
       where: { id: credentialId },
     });
@@ -56,6 +45,7 @@ export async function ExtractDataWithAiExecutor(
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash", // or gemini-1.5-flash for cheaper/faster, 
+      
 
       contents: [
         {
@@ -67,7 +57,6 @@ export async function ExtractDataWithAiExecutor(
           parts: [{ text: prompt }],
         },
       ],
-
 
     });
 
