@@ -16,6 +16,30 @@ export const ExtractDataWithAiTask = {
       required: true,
     },
     {
+      name: "Provider",
+      type: TaskParamType.SELECT,
+      required: true,
+      defaultValue: "openai",
+      options: [
+        { label: "OpenAI", value: "openai" },
+        { label: "Google Gemini", value: "google" },
+      ],
+    },
+    {
+      name: "Model",
+      type: TaskParamType.SELECT,
+      required: true,
+      defaultValue: "gpt-4o-mini",
+      options: [
+        { label: "GPT-4o", value: "gpt-4o" },
+        { label: "GPT-4o Mini", value: "gpt-4o-mini" },
+        { label: "Gemini 1.5 Pro", value: "gemini-1.5-pro" },
+        { label: "Gemini 1.5 Flash", value: "gemini-1.5-flash" },
+        { label: "Gemini 1.5 Flash 8B", value: "gemini-1.5-flash-8b" },
+        { label: "Gemini 2.0 Flash Exp", value: "gemini-2.0-flash-exp" },
+      ],
+    },
+    {
       name: "Credentials",
       type: TaskParamType.CREDENTIAL,
       required: true,
