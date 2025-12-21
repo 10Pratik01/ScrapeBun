@@ -26,6 +26,17 @@ export async function ExtractDataWithAiExecutor(
       return false;
     }
 
+    const provider = enviornment.getInput("Provider");
+    if (!provider) {
+      enviornment.log.error("input -> provider is not defined");
+      return false;
+    }
+    const model = enviornment.getInput("Model");
+    if (!model) {
+      enviornment.log.error("input -> model is not defined");
+      return false;
+    }
+
     const credential = await prisma.credential.findUnique({
       where: { id: credentialId },
     });

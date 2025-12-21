@@ -96,17 +96,14 @@ function CreateCredentialDialog({ triggeredText }: { triggeredText?: string }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex gap-1 items-center">
-                      Description{" "}
-                      <p className="text-xs text-muted-foreground">
-                        (optinoal)
-                      </p>
+                      Value <p className="text-xs text-primary">(required)</p>
                     </FormLabel>
                     <FormControl>
                       <Textarea {...field} className="resize-none" />
                     </FormControl>
                     <FormDescription>
-                      Enter the value assosiated with this credential <br />
-                      This value wiil be securely encrypted and stored
+                      Enter the value associated with this credential <br />
+                      This value will be securely encrypted and stored
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
