@@ -20,37 +20,21 @@ import {
   createCredentialSchemaType,
 } from "@/schema/credential";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { Layers2Icon, Loader2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 
 function CreateCredentialDialog({ triggeredText }: { triggeredText?: string }) {
   const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const form = useForm<createCredentialSchemaType>({
     resolver: zodResolver(createCredentialSchema),
-    defaultValues: {},
-  });
-  const { mutate, isPending } = useMutation({
-    mutationFn: createCredential,
-    onSuccess: () => {
-      toast.success("Credential created", { id: "create-credential" });
-      setOpen(false);
-    },
-    onError: (error: any) => {
-      toast.error("Failed to create credential", { id: "create-credential" });
+    defaultValues: {
+      name: "",
+      value: "",
     },
   });
-
-  const onSubmit = useCallback(
-    (values: createCredentialSchemaType) => {
-      toast.loading("Creating credential...", { id: "create-credential" });
-      mutate(values);
-    },
-    [mutate]
-  );
 
   return (
     <Dialog
@@ -63,46 +47,61 @@ function CreateCredentialDialog({ triggeredText }: { triggeredText?: string }) {
       <DialogTrigger asChild>
         <Button>{triggeredText ?? "Create credential"}</Button>
       </DialogTrigger>
+
       <DialogContent className="px-0">
-        <CustomDialogHeader icon={Layers2Icon} title="Create Credential" />
+        <CustomDialogHeader
+          icon={Layers2Icon}
+          title="Create Credential"
+        />
+
         <div className="p-6">
           <Form {...form}>
             <form
+              action={(formData) => {
+                startTransition(async () => {
+                  await createCredential({
+                    name: formData.get("name") as string,
+                    value: formData.get("value") as string,
+                  });
+                });
+              }}
               className="space-y-8 w-full"
-              onSubmit={form.handleSubmit(onSubmit)}
             >
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex gap-1 items-center">
-                      Name <p className="text-xs text-primary">(required)</p>
+                    <FormLabel>
+                      Name <span className="text-xs text-primary">(required)</span>
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} name="name" />
                     </FormControl>
                     <FormDescription>
-                      Enter an unique and descriptive name for credential <br />
-                      This name will be used to identify credential
+                      Enter a unique and descriptive name for the credential
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="value"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex gap-1 items-center">
-                      Value <p className="text-xs text-primary">(required)</p>
+                    <FormLabel>
+                      Value <span className="text-xs text-primary">(required)</span>
                     </FormLabel>
                     <FormControl>
-                      <Textarea {...field} className="resize-none" />
+                      <Textarea
+                        {...field}
+                        name="value"
+                        className="resize-none"
+                      />
                     </FormControl>
                     <FormDescription>
-                      Enter the value associated with this credential <br />
                       This value will be securely encrypted and stored
                     </FormDescription>
                     <FormMessage />
@@ -111,7 +110,11 @@ function CreateCredentialDialog({ triggeredText }: { triggeredText?: string }) {
               />
 
               <Button type="submit" className="w-full" disabled={isPending}>
-                {!isPending ? "Proceed" : <Loader2 className="animate-spin" />}
+                {isPending ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  "Proceed"
+                )}
               </Button>
             </form>
           </Form>
