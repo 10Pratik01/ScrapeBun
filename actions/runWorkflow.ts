@@ -2,12 +2,12 @@
 
 import prisma from "@/lib/prisma";
 import {
-  ExecutionPhaseStatus,
   WorkflowExecutionPlan,
   WorkflowExecutionStatus,
   WorkflowExecutionTrigger,
   WorkflowStatus,
 } from "@/lib/types";
+import { StepStatus } from "@/lib/workflow/engine/types";
 import { executeWorkflow } from "@/lib/workflow/executeWorkflow";
 import { flowToExecutionPlan } from "@/lib/workflow/executionPlan";
 import { TaskRegistry } from "@/lib/workflow/task/Registry";
@@ -67,6 +67,10 @@ export async function runWorkflow(form: {
     executionPlan = result.executionPlan;
   }
 
+  // Parse edges from workflow definition to calculate dependencies
+  const flow = JSON.parse(workflowDefinition!);
+  const edges = flow.edges;
+
   const execution = await prisma.workflowExecution.create({
     data: {
       workflowId,
@@ -75,15 +79,24 @@ export async function runWorkflow(form: {
       startedAt: new Date(),
       trigger: WorkflowExecutionTrigger.MANUAl,
       definition: workflowDefinition,
-      phases: {
+      steps: {
         create: executionPlan.flatMap((phase) =>
           phase.nodes.flatMap((node) => {
+            // Calculate dependencies from edges for this node
+            const nodeDependencies = edges
+              .filter((edge: any) => edge.target === node.id)
+              .map((edge: any) => edge.source);
+
             return {
               userId,
-              status: ExecutionPhaseStatus.CREATED,
-              number: phase.phase,
-              node: JSON.stringify(node),
-              name: TaskRegistry[node.data.type].label,
+              nodeId: node.id,
+              nodeType: node.data.type,
+              status: StepStatus.PENDING,
+              inputs: JSON.stringify(node.data.inputs || {}),
+              outputs: "{}",
+              dependencies: JSON.stringify(nodeDependencies),
+              creditsReserved: TaskRegistry[node.data.type].credits,
+              creditsConsumed: 0,
             };
           })
         ),
@@ -91,7 +104,7 @@ export async function runWorkflow(form: {
     },
     select: {
       id: true,
-      phases: true,
+      steps: true,
     },
   });
 

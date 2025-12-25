@@ -1,27 +1,35 @@
-import { ExecutionEnviornment } from "@/lib/types";
-import { FillInputTask } from "../task/FillInput";
+import { ExecutionEnv, StepResult } from "../engine/types";
 
 export async function FillInputExecutor(
-  enviornment: ExecutionEnviornment<typeof FillInputTask>
-): Promise<boolean> {
+  env: ExecutionEnv
+): Promise<StepResult> {
   try {
-    const selector = enviornment.getInput("Selector");
+    const selector = env.getInput("Selector");
     if (!selector) {
-      enviornment.log.error("input -> selector is not defined");
-      return false;
+      env.log.error("Selector is required");
+      return { type: "fail", error: "Selector input is missing" };
     }
 
-    const value = enviornment.getInput("Value");
+    const value = env.getInput("Value");
     if (!value) {
-      enviornment.log.error("input -> value is not defined");
-      return false;
+      env.log.error("Value is required");
+      return { type: "fail", error: "Value input is missing" };
     }
 
-    await enviornment.getPage()!.type(selector, value);
+    const page = env.getPage();
+    if (!page) {
+      return { type: "fail", error: "No page available" };
+    }
 
-    return true;
+    await page.type(selector, value);
+    env.log.info(`Filled input ${selector}`);
+
+    return {
+      type: "success",
+      outputs: { "Filled": "true" },
+    };
   } catch (error: any) {
-    enviornment.log.error(error.message);
-    return false;
+    env.log.error(error.message);
+    return { type: "fail", error: error.message };
   }
 }

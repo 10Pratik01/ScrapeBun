@@ -1,21 +1,29 @@
-import { ExecutionEnviornment } from "@/lib/types";
-import { ClickElementTask } from "../task/ClickElement";
+import { ExecutionEnv, StepResult } from "../engine/types";
 
 export async function ClickElementExecutor(
-  enviornment: ExecutionEnviornment<typeof ClickElementTask>
-): Promise<boolean> {
+  env: ExecutionEnv
+): Promise<StepResult> {
   try {
-    const selector = enviornment.getInput("Selector");
+    const selector = env.getInput("Selector");
     if (!selector) {
-      enviornment.log.error("input -> selector is not defined");
-      return false;
+      env.log.error("Selector is required");
+      return { type: "fail", error: "Selector input is missing" };
     }
 
-    await enviornment.getPage()!.click(selector);
+    const page = env.getPage();
+    if (!page) {
+      return { type: "fail", error: "No page available" };
+    }
 
-    return true;
+    await page.click(selector);
+    env.log.info(`Clicked element: ${selector}`);
+
+    return {
+      type: "success",
+      outputs: { "Clicked": "true" },
+    };
   } catch (error: any) {
-    enviornment.log.error(error.message);
-    return false;
+    env.log.error(error.message);
+    return { type: "fail", error: error.message };
   }
 }

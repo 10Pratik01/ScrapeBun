@@ -1,4 +1,4 @@
-import { ExecutionPhase } from "@prisma/client";
+import { ExecutionStep } from "@prisma/client";
 import { endOfMonth, intervalToDuration, startOfMonth } from "date-fns";
 import { AppNode, Period } from "./types";
 import { TaskRegistry } from "./workflow/task/Registry";
@@ -24,14 +24,13 @@ export function datesToDurationString(
     end: timeElapsed,
   });
 
-  return `${duration.hours || 0}h ${duration.minutes || 0}m ${
-    duration.seconds || 0
-  }s`;
+  return `${duration.hours || 0}h ${duration.minutes || 0}m ${duration.seconds || 0
+    }s`;
 }
 
-type Phase = Pick<ExecutionPhase, "creditsConsumed">;
-export function getPhasesTotalCost(phases: Phase[]) {
-  return phases.reduce((acc, phase) => acc + (phase.creditsConsumed || 0), 0);
+type Step = Pick<ExecutionStep, "creditsConsumed">;
+export function getStepsTotalCost(steps: Step[]) {
+  return steps.reduce((acc, step) => acc + (step.creditsConsumed || 0), 0);
 }
 
 export function calculateWorkflowCost(nodes: AppNode[]) {
@@ -52,3 +51,9 @@ export function periodToDateRange(period: Period) {
 
   return { startDate, endDate };
 }
+
+// Alias for backwards compatibility (Engine V1 used "phases", V2 uses "steps")
+export function getPhasesTotalCost(phases: Step[]) {
+  return getStepsTotalCost(phases);
+}
+

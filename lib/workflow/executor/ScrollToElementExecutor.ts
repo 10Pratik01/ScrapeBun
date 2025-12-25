@@ -1,28 +1,37 @@
-import { ExecutionEnviornment } from "@/lib/types";
-import { ScrollToElementTask } from "../task/ScrollToElement";
+import { ExecutionEnv, StepResult } from "../engine/types";
 
 export async function ScrollToElementExecutor(
-  enviornment: ExecutionEnviornment<typeof ScrollToElementTask>
-): Promise<boolean> {
+  env: ExecutionEnv
+): Promise<StepResult> {
   try {
-    const selector = enviornment.getInput("Selector");
+    const selector = env.getInput("Selector");
     if (!selector) {
-      enviornment.log.error("input -> selector is not defined");
-      return false;
+      env.log.error("Selector is required");
+      return { type: "fail", error: "Selector input is missing" };
     }
 
-    await enviornment.getPage()!.evaluate((eleSelector) => {
+    const page = env.getPage();
+    if (!page) {
+      return { type: "fail", error: "No page available" };
+    }
+
+    await page.evaluate((eleSelector) => {
       const element = document.querySelector(eleSelector);
       if (!element) {
         throw new Error("Element not found");
       }
       const eleScroll = element.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: eleScroll });
+      window.scrollTo({ top: eleScroll, behavior: 'smooth' });
     }, selector);
 
-    return true;
+    env.log.info(`Scrolled to element: ${selector}`);
+
+    return {
+      type: "success",
+      outputs: { "Scrolled": "true" },
+    };
   } catch (error: any) {
-    enviornment.log.error(error.message);
-    return false;
+    env.log.error(error.message);
+    return { type: "fail", error: error.message };
   }
 }

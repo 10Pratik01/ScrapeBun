@@ -25,6 +25,7 @@ function TaskMenu() {
           "timings",
           "results",
           "storage",
+          "controlflow",
         ]}
       >
         <AccordionItem value="interactions">
@@ -55,6 +56,16 @@ function TaskMenu() {
           <AccordionContent className="flex flex-col gap-1">
             <TaskMenuButton taskType={TaskType.READ_PROPERTY_FROM_JSON} />
             <TaskMenuButton taskType={TaskType.ADD_PROPERTY_TO_JSON} />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="controlflow">
+          <AccordionTrigger className="font-bold">
+            Control Flow
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-1">
+            <TaskMenuButton taskType={TaskType.CONDITION} />
+            <TaskMenuButton taskType={TaskType.FOREACH} />
+            <TaskMenuButton taskType={TaskType.MERGE} />
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="timings">

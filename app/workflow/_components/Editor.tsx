@@ -19,6 +19,7 @@ function Editor({ workflow }: { workflow: Workflow }) {
             subtitle={workflow.name}
             workflowId={workflow.id}
             isPublished={workflow.status === WorkflowStatus.PUBLISHED}
+            creditsCost={workflow.creditsCost}
           />
           <section className="flex h-full overflow-auto">
             <TaskMenu />

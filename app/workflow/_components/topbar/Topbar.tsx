@@ -9,6 +9,7 @@ import ExecuteButton from "./ExecuteButton";
 import NavigationTabs from "./NavigationTabs";
 import PublishButton from "./PublishButton";
 import UnPublishButton from "./UnPublishButton";
+import OptimizationButton from "./OptimizationButton";
 
 interface Props {
   title: string;
@@ -16,6 +17,7 @@ interface Props {
   workflowId: string;
   hideButtons?: boolean;
   isPublished?: boolean;
+  creditsCost?: number;
 }
 
 function Topbar({
@@ -24,6 +26,7 @@ function Topbar({
   workflowId,
   hideButtons = false,
   isPublished = false,
+  creditsCost = 0,
 }: Props) {
   const router = useRouter();
 
@@ -48,14 +51,11 @@ function Topbar({
       <div className="flex gap-1 flex-1 justify-end">
         {!hideButtons && (
           <Fragment>
-            <ExecuteButton workflowId={workflowId} />
+            <OptimizationButton />
+            {!isPublished && <PublishButton workflowId={workflowId} />}
+            <ExecuteButton workflowId={workflowId} isPublished={isPublished} creditsCost={creditsCost} />
+            <SaveButton workflowId={workflowId} />
             {isPublished && <UnPublishButton workflowId={workflowId} />}
-            {!isPublished && (
-              <Fragment>
-                <SaveButton workflowId={workflowId} />
-                <PublishButton workflowId={workflowId} />
-              </Fragment>
-            )}
           </Fragment>
         )}
       </div>

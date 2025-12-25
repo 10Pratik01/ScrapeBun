@@ -1,44 +1,71 @@
 "use client";
-import { runWorkflow } from "@/actions/runWorkflow";
-import { publishWorkflow } from "@/actions/workflows";
+import { updateWorkFlow, publishWorkflow } from "@/actions/workflows";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import useExecutionPlan from "@/hooks/useExecutionPlan";
 import { useMutation } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
-import { PlayIcon, UploadIcon } from "lucide-react";
+import { RocketIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
 
 function PublishButton({ workflowId }: { workflowId: string }) {
   const generateExecutionPlan = useExecutionPlan();
-  const mutation = useMutation({
+  const { toObject } = useReactFlow();
+
+  const saveMutation = useMutation({
+    mutationFn: updateWorkFlow,
+  });
+
+  const publishMutation = useMutation({
     mutationFn: publishWorkflow,
     onSuccess: () => {
-      toast.success("Workflow published", { id: workflowId });
+      toast.success("Workflow activated successfully!", { id: workflowId });
+      // Force full page reload to update workflow status
+      setTimeout(() => window.location.reload(), 500);
     },
     onError: (error: any) => {
       toast.error(error.message || "Something went wrong", { id: workflowId });
     },
   });
 
-  const { toObject } = useReactFlow();
+  const handlePublish = async () => {
+    const plan = generateExecutionPlan();
+    if (!plan) return;
+
+    const flowDefinition = JSON.stringify(toObject());
+
+    try {
+      toast.loading("Saving and activating workflow...", { id: workflowId });
+
+      // Save first, then publish
+      await saveMutation.mutateAsync({
+        id: workflowId,
+        definition: flowDefinition,
+      });
+
+      // Then publish (activate)
+      await publishMutation.mutateAsync({
+        id: workflowId,
+        flowDefinition,
+      });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to activate workflow", {
+        id: workflowId,
+      });
+    }
+  };
 
   return (
     <Button
       variant={"outline"}
-      className="flex items-center gap-2"
-      disabled={mutation.isError}
-      onClick={() => {
-        const plan = generateExecutionPlan();
-        if (!plan) return;
-        toast.loading("Publishing workflow...", { id: workflowId });
-        mutation.mutate({
-          id: workflowId,
-          flowDefinition: JSON.stringify(toObject()),
-        });
-      }}
+      size="sm"
+      className="flex items-center gap-1.5 text-xs"
+      disabled={publishMutation.isPending || saveMutation.isPending}
+      onClick={handlePublish}
     >
-      <UploadIcon size={16} className="stroke-purple-400" /> Publish
+      <RocketIcon size={14} />
+      Activate
     </Button>
   );
 }

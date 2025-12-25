@@ -1,27 +1,45 @@
-import { ExecutionEnviornment } from "@/lib/types";
+import { ExecutionEnv, StepResult } from "../engine/types";
 import puppeteer from "puppeteer";
-import { LaunchBrowserTask } from "../task/LaunchBrowser";
 
 export async function LaunchBrowserExecutor(
-  enviornment: ExecutionEnviornment<typeof LaunchBrowserTask>
-): Promise<boolean> {
+  env: ExecutionEnv
+): Promise<StepResult> {
   try {
-    const websiteUrl = enviornment.getInput("Website Url");
-    console.log(websiteUrl);
+    const websiteUrl = env.getInput("Website Url");
+
+    if (!websiteUrl) {
+      env.log.error("Website URL is required");
+      return { type: "fail", error: "Website URL input is missing" };
+    }
+
+    env.log.info(`Launching browser for: ${websiteUrl}`);
 
     const browser = await puppeteer.launch({
-      headless: true, // For dev_testing
-      args: ["--no-sandbox"],
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
-    enviornment.log.info("Browser started successfully");
-    enviornment.setBrowser(browser);
+
+    env.log.info("Browser started successfully");
+    env.setBrowser(browser);
+
     const page = await browser.newPage();
-    await page.goto(websiteUrl);
-    enviornment.setPage(page);
-    enviornment.log.info(`Opened page at: ${websiteUrl}`);
-    return true;
+    await page.setViewport({ width: 1920, height: 1080 });
+
+    env.log.info(`Navigating to: ${websiteUrl}`);
+    await page.goto(websiteUrl, { waitUntil: "networkidle2", timeout: 30000 });
+
+    env.setPage(page);
+    env.log.info(`✓ Successfully opened page at: ${websiteUrl}`);
+
+    return {
+      type: "success",
+      outputs: {
+        "Web page": "Browser instance created",
+        "Browser Instance": "active",
+      },
+    };
   } catch (error: any) {
-    enviornment.log.error(error.message);
-    return false;
+    env.log.error(`LAUNCH_BROWSER error: ${error.message}`);
+    return { type: "fail", error: error.message };
   }
 }

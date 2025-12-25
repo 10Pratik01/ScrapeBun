@@ -1,37 +1,34 @@
-import { ExecutionEnviornment } from "@/lib/types";
-import { AddPropertyToJsonTask } from "../task/AddPropertyToJson";
+import { ExecutionEnv, StepResult } from "../engine/types";
 
 export async function AddPropertyToJsonExecutor(
-  enviornment: ExecutionEnviornment<typeof AddPropertyToJsonTask>
-): Promise<boolean> {
+  env: ExecutionEnv
+): Promise<StepResult> {
   try {
-    const jsonData = enviornment.getInput("JSON");
+    const jsonData = env.getInput("JSON");
     if (!jsonData) {
-      enviornment.log.error("input -> JSON is not defined");
-      return false;
+      return { type: "fail", error: "JSON input is missing" };
     }
-    const propertyName = enviornment.getInput("Property name");
 
+    const propertyName = env.getInput("Property name");
     if (!propertyName) {
-      enviornment.log.error("input -> Property Name is not defined");
-      return false;
+      return { type: "fail", error: "Property name input is missing" };
     }
 
-    const propertyValue = enviornment.getInput("Property value");
-
+    const propertyValue = env.getInput("Property value");
     if (!propertyValue) {
-      enviornment.log.error("input -> Propety Value is not defined");
-      return false;
+      return { type: "fail", error: "Property value input is missing" };
     }
 
     const json = JSON.parse(jsonData);
     json[propertyName] = propertyValue;
+    const updatedJson = JSON.stringify(json);
 
-    enviornment.setOutput("Updated JSON", JSON.stringify(json));
-
-    return true;
+    return {
+      type: "success",
+      outputs: { "Updated JSON": updatedJson },
+    };
   } catch (error: any) {
-    enviornment.log.error(error.message);
-    return false;
+    env.log.error(error.message);
+    return { type: "fail", error: error.message };
   }
 }

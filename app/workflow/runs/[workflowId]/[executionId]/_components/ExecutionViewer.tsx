@@ -69,28 +69,33 @@ function ExecutionViewer({ initialData }: { initialData: ExecutionData }) {
 
   useEffect(() => {
     // If status is running auto select the running phase
-    const phases = query.data?.phases || [];
+    const steps = query.data?.steps || [];
     if (isRunning) {
-      const phaseToSelect = phases.toSorted((a, b) =>
-        a.startedAt! > b.startedAt! ? -1 : 1
-      )[0];
+      // Find the currently running or most recently started step
+      const stepToSelect = steps
+        .filter((s: any) => s.status === "RUNNING")
+        .sort((a: any, b: any) =>
+          new Date(a.startedAt!).getTime() - new Date(b.startedAt!).getTime()
+        )[0] || steps[steps.length - 1]; // Default to last step if none running
 
-      setSelectedPhase(phaseToSelect.id);
+      setSelectedPhase(stepToSelect?.id);
       return;
     }
-    // Auto selecting last run phase on reload
-    const phaseToSelect = phases.toSorted((a, b) =>
-      a.completedAt! > b.completedAt! ? -1 : 1
-    )[0];
-    setSelectedPhase(phaseToSelect?.id || "");
-  }, [query.data?.phases, isRunning]);
+    // Auto selecting last completed phase on reload
+    const stepToSelect = steps
+      .filter((s: any) => s.completedAt)
+      .sort((a: any, b: any) =>
+        new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime()
+      )[0];
+    setSelectedPhase(stepToSelect?.id || "");
+  }, [query.data?.steps, isRunning]);
 
   const duration = datesToDurationString(
     query.data?.completedAt,
     query.data?.startedAt
   );
 
-  const creditsConsumed = getPhasesTotalCost(query.data?.phases || []);
+  const creditsConsumed = getPhasesTotalCost(query.data?.steps || []);
 
   return (
     <div className="flex w-full h-full">
@@ -115,8 +120,8 @@ function ExecutionViewer({ initialData }: { initialData: ExecutionData }) {
               <span className="lowercase">
                 {query.data?.startedAt
                   ? formatDistanceToNow(new Date(query.data.startedAt), {
-                      addSuffix: true,
-                    })
+                    addSuffix: true,
+                  })
                   : "-"}
               </span>
             }
@@ -147,21 +152,21 @@ function ExecutionViewer({ initialData }: { initialData: ExecutionData }) {
         </div>
         <Separator />
         <div className="overflow-auto h-full px-2 py-4">
-          {query.data?.phases.map((phase, index) => (
+          {query.data?.steps.map((step, index) => (
             <Button
-              key={phase.id}
+              key={step.id}
               className="w-full justify-between"
-              variant={selectedPhase === phase.id ? "secondary" : "ghost"}
+              variant={selectedPhase === step.id ? "secondary" : "ghost"}
               onClick={() => {
                 if (isRunning) return;
-                setSelectedPhase(phase.id);
+                setSelectedPhase(step.id);
               }}
             >
               <div className="flex items-center gap-2">
                 <Badge variant={"outline"}>{index + 1}</Badge>
-                <p className="font-semibold">{phase.name}</p>
+                <p className="font-semibold">{step.nodeId}</p>
               </div>
-              <PhaseStatusBadge status={phase.status as ExecutionPhaseStatus} />
+              <PhaseStatusBadge status={step.status as ExecutionPhaseStatus} />
             </Button>
           ))}
         </div>
@@ -329,12 +334,12 @@ function LogViewer({ logs }: { logs: ExecutionLog[] | undefined }) {
                   width={80}
                   className={cn(
                     "uppercase text-sm font-bold p-[3px] pl-4",
-                    (log.logLevel as LogLevel) === "error" &&
-                      "text-destructive",
-                    (log.logLevel as LogLevel) === "info" && "text-primary"
+                    (log.level as LogLevel) === "error" &&
+                    "text-destructive",
+                    (log.level as LogLevel) === "info" && "text-primary"
                   )}
                 >
-                  {log.logLevel}
+                  {log.level}
                 </TableCell>
                 <TableCell className="text-sm flex-1 p-[3px] pl-4">
                   {log.message}

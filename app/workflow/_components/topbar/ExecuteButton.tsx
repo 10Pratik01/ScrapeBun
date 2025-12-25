@@ -4,13 +4,23 @@ import { Button } from "@/components/ui/button";
 import useExecutionPlan from "@/hooks/useExecutionPlan";
 import { useMutation } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
-import { PlayIcon } from "lucide-react";
+import { CoinsIcon, PlayIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
 
-function ExecuteButton({ workflowId }: { workflowId: string }) {
+function ExecuteButton({
+  workflowId,
+  isPublished = false,
+  creditsCost = 0,
+}: {
+  workflowId: string;
+  isPublished?: boolean;
+  creditsCost?: number;
+}) {
   const generateExecutionPlan = useExecutionPlan();
-  const mutation = useMutation({
+  const { toObject } = useReactFlow();
+
+  const executeMutation = useMutation({
     mutationFn: runWorkflow,
     onSuccess: () => {
       toast.success("Execution Started", { id: "flow-execution" });
@@ -20,24 +30,33 @@ function ExecuteButton({ workflowId }: { workflowId: string }) {
     },
   });
 
-  const { toObject } = useReactFlow();
+  const handleExecute = () => {
+    const plan = generateExecutionPlan();
+    if (!plan) return;
+
+    const flowDefinition = JSON.stringify(toObject());
+    toast.loading("Starting execution...", { id: "flow-execution" });
+    executeMutation.mutate({
+      workflowId,
+      flowDefinition,
+    });
+  };
 
   return (
     <Button
       variant={"outline"}
       className="flex items-center gap-2"
-      disabled={mutation.isError}
-      onClick={() => {
-        const plan = generateExecutionPlan();
-        if (!plan) return;
-        toast.success("Starting execution...", { id: "flow-execution" });
-        mutation.mutate({
-          workflowId,
-          flowDefinition: JSON.stringify(toObject()),
-        });
-      }}
+      disabled={executeMutation.isPending}
+      onClick={handleExecute}
     >
-      <PlayIcon size={16} className="stroke-orange-400" /> Execute
+      <PlayIcon size={16} className="stroke-orange-400" />
+      Execute
+      {creditsCost > 0 && (
+        <span className="flex items-center gap-1 ml-1 text-xs text-muted-foreground">
+          <CoinsIcon size={12} />
+          {creditsCost}
+        </span>
+      )}
     </Button>
   );
 }

@@ -44,37 +44,56 @@ model WorkflowExecution{
   completedAt       DateTime?
   creditsConsumed   Int @default(0)
   definition        String @default("{}")
-  phases            ExecutionPhase[]
+  cursor            String?
+  steps             ExecutionStep[]
   workflow          Workflow @relation(fields: [workflowId],references: [id],onDelete: Cascade)
 
 }
 
-model ExecutionPhase{
+model ExecutionStep{
    id                  String @id @default(cuid())
+   executionId         String
    userId              String
+   nodeId              String
+   nodeType            String
    status              String
-   number              Int
-   node                String
-   name                String
+   createdAt           DateTime @default(now())
    startedAt           DateTime?
    completedAt         DateTime?
    inputs              String?
    outputs             String?
-   creditsConsumed     Int?
-   workflowExecutionId String
+   dependencies        String @default("[]")
+   creditsReserved     Int @default(0)
+   creditsConsumed     Int @default(0)
+   pauseReason         String?
+   error               String?
 
-   execution           WorkflowExecution @relation(fields: [workflowExecutionId],references: [id],onDelete: Cascade)
+   execution           WorkflowExecution @relation(fields: [executionId],references: [id],onDelete: Cascade)
    logs                ExecutionLog[]
+   
+   @@index([executionId, status])
 }
 
 model ExecutionLog{
     id                    String @id @default(cuid())
-    logLevel              String
+    level                 String
     message               String
     timestamp             DateTime @default(now())
 
-    executionPhaseId      String
-    executionPhase       ExecutionPhase @relation(fields: [executionPhaseId],references: [id],onDelete: Cascade)
+    executionStepId       String
+    executionStep         ExecutionStep @relation(fields: [executionStepId],references: [id],onDelete: Cascade)
+}
+
+model ScrapeSnapshot {
+  id            String   @id @default(cuid())
+  executionId   String
+  nodeId        String
+  url           String
+  html          String
+  timestamp     DateTime @default(now())
+  
+  @@unique([executionId, nodeId])
+  @@index([executionId])
 }
 
 model UserBalance {

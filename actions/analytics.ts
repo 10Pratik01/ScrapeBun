@@ -3,11 +3,11 @@
 import { periodToDateRange } from "@/lib/helper";
 import prisma from "@/lib/prisma";
 import {
-  ExecutionPhaseStatus,
   Period,
   WorkflowExecutionStatus,
   WorkflowExecutionType,
 } from "@/lib/types";
+import { StepStatus } from "@/lib/workflow/engine/types";
 import { auth } from "@clerk/nextjs/server";
 import { eachDayOfInterval, format } from "date-fns";
 
@@ -65,10 +65,10 @@ export async function getStatsCardsValue(period: Period) {
     },
     select: {
       creditsConsumed: true,
-      phases: {
+      steps: {
         where: {
           creditsConsumed: {
-            not: null,
+            gt: 0,
           },
         },
         select: {
@@ -81,15 +81,15 @@ export async function getStatsCardsValue(period: Period) {
   const stats = {
     WorkflowExecutions: executions.length,
     creditsConsumed: 0,
-    phaseExecutions: 0,
+    stepExecutions: 0,
   };
 
   stats.creditsConsumed = executions.reduce(
     (sum, execution) => sum + execution.creditsConsumed,
     0
   );
-  stats.phaseExecutions = executions.reduce(
-    (sum, execution) => sum + execution.phases.length,
+  stats.stepExecutions = executions.reduce(
+    (sum, execution) => sum + execution.steps.length,
     0
   );
 
@@ -113,7 +113,7 @@ export async function getWorkflowExecutionsStats(period: Period) {
         lte: dateRange.endDate,
       },
       status: {
-        in: [ExecutionPhaseStatus.COMPLETED, ExecutionPhaseStatus.FAILED],
+        in: [WorkflowExecutionStatus.COMPLETED, WorkflowExecutionStatus.FAILED],
       },
     },
   });
@@ -182,15 +182,15 @@ export async function getCreditsUsageInPeriod(period: Period) {
       return acc;
     }, {} as any);
 
-  executionsPhases.forEach((phase) => {
-    const date = format(phase.startedAt!, "yyyy-MM-dd");
+  executionsPhases.forEach((execution) => {
+    const date = format(execution.startedAt!, "yyyy-MM-dd");
 
-    if (phase.status === ExecutionPhaseStatus.COMPLETED) {
-      stats[date].success! += phase.creditsConsumed || 0;
+    if (execution.status === WorkflowExecutionStatus.COMPLETED) {
+      stats[date].success! += execution.creditsConsumed || 0;
     }
 
-    if (phase.status === ExecutionPhaseStatus.FAILED) {
-      stats[date].failed! += phase.creditsConsumed || 0;
+    if (execution.status === WorkflowExecutionStatus.FAILED) {
+      stats[date].failed! += execution.creditsConsumed || 0;
     }
   });
 

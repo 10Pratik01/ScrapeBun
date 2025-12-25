@@ -1,10 +1,10 @@
 import prisma from "@/lib/prisma";
 import {
-  ExecutionPhaseStatus,
   WorkflowExecutionPlan,
   WorkflowExecutionStatus,
   WorkflowExecutionTrigger,
 } from "@/lib/types";
+import { StepStatus } from "@/lib/workflow/engine/types";
 import { executeWorkflow } from "@/lib/workflow/executeWorkflow";
 import { TaskRegistry } from "@/lib/workflow/task/Registry";
 import { timingSafeEqual } from "crypto";
@@ -55,15 +55,19 @@ export async function GET(request: Request) {
         status: WorkflowExecutionStatus.PENDING,
         startedAt: new Date(),
         trigger: WorkflowExecutionTrigger.CRON,
-        phases: {
+        steps: {
           create: executionPlan.flatMap((phase) =>
             phase.nodes.flatMap((node) => {
               return {
                 userId: workflow.userId,
-                status: ExecutionPhaseStatus.CREATED,
-                number: phase.phase,
-                node: JSON.stringify(node),
-                name: TaskRegistry[node.data.type].label,
+                nodeId: node.id,
+                nodeType: node.data.type,
+                status: StepStatus.PENDING,
+                inputs: JSON.stringify(node.data.inputs || {}),
+                outputs: "{}",
+                dependencies: "[]",
+                creditsReserved: TaskRegistry[node.data.type].credits,
+                creditsConsumed: 0,
               };
             })
           ),

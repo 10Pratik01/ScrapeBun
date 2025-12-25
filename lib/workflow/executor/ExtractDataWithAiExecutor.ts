@@ -1,29 +1,25 @@
-import { ExecutionEnviornment } from "@/lib/types";
-import { ExtractDataWithAiTask } from "../task/ExtractDataWithAi";
+import { ExecutionEnv, StepResult } from "../engine/types";
 import prisma from "@/lib/prisma";
 import { symmetricDecrypt } from "@/lib/credential";
 import { GoogleGenAI } from "@google/genai";
 
 export async function ExtractDataWithAiExecutor(
-  enviornment: ExecutionEnviornment<typeof ExtractDataWithAiTask>
-): Promise<boolean> {
+  env: ExecutionEnv
+): Promise<StepResult> {
   try {
-    const credentialId = enviornment.getInput("Credentials");
+    const credentialId = env.getInput("Credentials");
     if (!credentialId) {
-      enviornment.log.error("input -> credentials is not defined");
-      return false;
+      return { type: "fail", error: "Credentials input is missing" };
     }
 
-    const content = enviornment.getInput("Content");
+    const content = env.getInput("Content");
     if (!content) {
-      enviornment.log.error("input -> content is not defined");
-      return false;
+      return { type: "fail", error: "Content input is missing" };
     }
 
-    const prompt = enviornment.getInput("Prompt");
+    const prompt = env.getInput("Prompt");
     if (!prompt) {
-      enviornment.log.error("input -> prompt is not defined");
-      return false;
+      return { type: "fail", error: "Prompt input is missing" };
     }
 
     const credential = await prisma.credential.findUnique({
@@ -31,22 +27,18 @@ export async function ExtractDataWithAiExecutor(
     });
 
     if (!credential) {
-      enviornment.log.error("Credential not found");
-      return false;
+      return { type: "fail", error: "Credential not found" };
     }
 
     const apiKey = symmetricDecrypt(credential.value);
     if (!apiKey) {
-      enviornment.log.error("Cannot decrypt credential");
-      return false;
+      return { type: "fail", error: "Cannot decrypt credential" };
     }
 
     const ai = new GoogleGenAI({ apiKey });
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", // or gemini-1.5-flash for cheaper/faster, 
-      
-
+      model: "gemini-2.5-flash",
       contents: [
         {
           role: "user",
@@ -57,36 +49,34 @@ export async function ExtractDataWithAiExecutor(
           parts: [{ text: prompt }],
         },
       ],
-
     });
 
-    enviornment.log.info(
-      `Prompt tokens used: ${response.usageMetadata?.promptTokenCount}`
+    env.log.info(
+      `Prompt tokens: ${response.usageMetadata?.promptTokenCount}`
     );
-
-    enviornment.log.info(
-      `Completion tokens used: ${response.usageMetadata?.candidatesTokenCount}`
+    env.log.info(
+      `Completion tokens: ${response.usageMetadata?.candidatesTokenCount}`
     );
 
     const result = response.text?.trim();
 
     if (!result) {
-      enviornment.log.error("Empty response from Gemini");
-      return false;
+      return { type: "fail", error: "Empty response from Gemini" };
     }
 
-    // Optional safety: ensure valid JSON
+    // Ensure valid JSON
     try {
       JSON.parse(result);
     } catch {
-      enviornment.log.error("Gemini response is not valid JSON");
-      return false;
+      return { type: "fail", error: "Gemini response is not valid JSON" };
     }
 
-    enviornment.setOutput("Extracted Data", result);
-    return true;
+    return {
+      type: "success",
+      outputs: { "Extracted Data": result },
+    };
   } catch (error: any) {
-    enviornment.log.error(error.message ?? "Unknown Gemini error");
-    return false;
+    env.log.error(error.message ?? "Unknown Gemini error");
+    return { type: "fail", error: error.message };
   }
 }

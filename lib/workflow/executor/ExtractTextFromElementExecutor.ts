@@ -1,42 +1,44 @@
-import { ExecutionEnviornment } from "@/lib/types";
+import { ExecutionEnv, StepResult } from "../engine/types";
 import * as cheerio from "cheerio";
-import { ExtractTextFromElementTask } from "../task/ExtractTextFromElement";
 
 export async function ExtractTextFromElement(
-  enviornment: ExecutionEnviornment<typeof ExtractTextFromElementTask>
-): Promise<boolean> {
+  env: ExecutionEnv
+): Promise<StepResult> {
   try {
-    const selector = enviornment.getInput("Selector");
+    const selector = env.getInput("Selector");
     if (!selector) {
-      enviornment.log.error("Selector not defined");
-      return false;
+      env.log.error("Selector not defined");
+      return { type: "fail", error: "Selector input is missing" };
     }
 
-    const html = enviornment.getInput("Html");
+    const html = env.getInput("Html");
     if (!html) {
-      enviornment.log.error("HTML not defined");
-      return false;
+      env.log.error("HTML not defined");
+      return { type: "fail", error: "HTML input is missing" };
     }
 
     const $ = cheerio.load(html);
     const element = $(selector);
 
-    if (!element) {
-      enviornment.log.error("Element not found on selector");
-      return false;
+    if (!element || element.length === 0) {
+      env.log.error("Element not found on selector");
+      return { type: "fail", error: `Element not found: ${selector}` };
     }
 
-    const extractedText = $.text(element);
+    const extractedText = element.text().trim();
     if (!extractedText) {
-      enviornment.log.error("Element has no text");
-      return false;
+      env.log.error("Element has no text");
+      return { type: "fail", error: "Element has no text content" };
     }
 
-    enviornment.setOutput("Extracted Text", extractedText);
+    env.log.info(`Extracted text from ${selector}`);
 
-    return true;
+    return {
+      type: "success",
+      outputs: { "Extracted Text": extractedText },
+    };
   } catch (error: any) {
-    enviornment.log.error(error.message);
-    return false;
+    env.log.error(error.message);
+    return { type: "fail", error: error.message };
   }
 }

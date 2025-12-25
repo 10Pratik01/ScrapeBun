@@ -21,6 +21,11 @@ export enum TaskType {
   ADD_PROPERTY_TO_JSON = "ADD_PROPERTY_TO_JSON",
   NAVIGATE_URL = "NAVIGATE_URL",
   SCROLL_TO_ELEMENT = "SCROLL_TO_ELEMENT",
+  // Control Flow
+  CONDITION = "CONDITION",
+  FOREACH = "FOREACH",
+  WAIT_FOR_USER_INPUT = "WAIT_FOR_USER_INPUT",
+  MERGE = "MERGE", // Merge multiple inputs into one output
 }
 export enum TaskParamType {
   STRING = "STRING",
@@ -28,6 +33,32 @@ export enum TaskParamType {
   SELECT = "SELECT",
   CREDENTIAL = "CREDENTIAL",
 }
+
+/**
+ * Operators for CONDITION node evaluation
+ */
+export enum ConditionOperator {
+  EQUALS = "EQUALS",
+  NOT_EQUALS = "NOT_EQUALS",
+  CONTAINS = "CONTAINS",
+  NOT_CONTAINS = "NOT_CONTAINS",
+  STARTS_WITH = "STARTS_WITH",
+  ENDS_WITH = "ENDS_WITH",
+  IS_EMPTY = "IS_EMPTY",
+  IS_NOT_EMPTY = "IS_NOT_EMPTY",
+  GREATER_THAN = "GREATER_THAN",
+  LESS_THAN = "LESS_THAN",
+  GREATER_OR_EQUAL = "GREATER_OR_EQUAL",
+  LESS_OR_EQUAL = "LESS_OR_EQUAL",
+}
+
+/**
+ * Edge condition for control-flow branching
+ * - null: always follow (default)
+ * - "true": only follow if parent CONDITION outputs true
+ * - "false": only follow if parent CONDITION outputs false
+ */
+export type EdgeCondition = "true" | "false" | null;
 
 export enum FlowToExecutionPlanValidationError {
   "NO_ENTRY",

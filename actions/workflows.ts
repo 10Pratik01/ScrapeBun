@@ -102,9 +102,8 @@ export async function updateWorkFlow({
     throw new Error("Workflow not found");
   }
 
-  if (workflow.status !== WorkflowStatus.DRAFT) {
-    throw new Error("Workflow is not draft");
-  }
+  // Allow updating both DRAFT and PUBLISHED workflows
+  // Users can save changes to published workflows
 
   await prisma.workflow.update({
     data: {
@@ -118,7 +117,7 @@ export async function updateWorkFlow({
   revalidatePath("/workflows");
 }
 
-export async function getWorkflowExecutionWithPhases(executionId: string) {
+export async function getWorkflowExecutionWithSteps(executionId: string) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -128,25 +127,25 @@ export async function getWorkflowExecutionWithPhases(executionId: string) {
   return prisma.workflowExecution.findUnique({
     where: { id: executionId, userId },
     include: {
-      phases: {
+      steps: {
         orderBy: {
-          number: "asc",
+          createdAt: "asc",
         },
       },
     },
   });
 }
 
-export async function getWorkflowPhaseDetails(phaseId: string) {
+export async function getWorkflowStepDetails(stepId: string) {
   const { userId } = await auth();
 
   if (!userId) {
     throw new Error("Unauthenticated");
   }
 
-  return prisma.executionPhase.findUnique({
+  return prisma.executionStep.findUnique({
     where: {
-      id: phaseId,
+      id: stepId,
       execution: {
         userId,
       },
@@ -202,9 +201,8 @@ export async function publishWorkflow({
     throw new Error("Workflow not found");
   }
 
-  if (workflow.status !== WorkflowStatus.DRAFT) {
-    throw new Error("Workflow is not draft");
-  }
+  // Allow saving both DRAFT and PUBLISHED workflows
+  // Users should be able to edit and save published workflows
 
   const flow = JSON.parse(flowDefinition);
 
@@ -229,10 +227,10 @@ export async function publishWorkflow({
       definition: flowDefinition,
       executionPlan: JSON.stringify(result.executionPlan),
       creditsCost,
-      status: WorkflowStatus.PUBLISHED,
+      status: WorkflowStatus.PUBLISHED, // Actually publish the workflow
     },
   });
-  revalidatePath(`/worflow/editor/${id}`);
+  revalidatePath(`/workflow/editor/${id}`);
 }
 
 export async function unPublishWorkflow(id: string) {
@@ -266,7 +264,7 @@ export async function unPublishWorkflow(id: string) {
       creditsCost: 0,
     },
   });
-  revalidatePath(`/worflow/editor/${id}`);
+  revalidatePath(`/workflow/editor/${id}`);
 }
 
 export async function updateWorkFlowCron({
@@ -357,4 +355,14 @@ export async function duplicateWorkflow(form: duplicateWorkflowSchemaType) {
   }
 
   redirect("/workflows");
+}
+
+// Alias for backwards compatibility (Engine V1 used "phases", V2 uses "steps")
+export async function getWorkflowExecutionWithPhases(executionId: string) {
+  return getWorkflowExecutionWithSteps(executionId);
+}
+
+
+export async function getWorkflowPhaseDetails(stepId: string) {
+  return getWorkflowStepDetails(stepId);
 }
