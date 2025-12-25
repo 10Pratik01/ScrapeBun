@@ -1,13 +1,7 @@
 "use client";
-import { TypewriterEffectSmooth } from "@/components/accernity-ui/TypeWriterEffect";
-import { Button } from "@/components/ui/button";
-import { pricingPlans, typeWriterWords } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { ChevronRightIcon, Router } from "lucide-react";
 import { FeaturesSection } from "./_components/Feature";
 import { FeaturesGradient } from "./_components/FeaturesGradient";
-
-import { HoverEffect } from "@/components/accernity-ui/CardHover";
 import Link from "next/link";
 import Navbar from "./_components/Navbar";
 
@@ -65,7 +59,7 @@ export default function HomeLandingPage() {
           </div>
           <div className="flex flex-col md:flex-row md:justify-between mt-2 gap-2">
             <p className="text-xs font-bold">
-              This looks fun? Let's get started.
+              This looks fun? Let&apos;s get started.
             </p>
             <Link href="/home">
               <button className="p-1.5 bg-primary rounded-md text-xs hover:bg-primary/50 hover:scale-105 transition-all duration-300 w-full md:w-auto">
@@ -89,36 +83,6 @@ export default function HomeLandingPage() {
         secondaryTitle="Features"
       >
         <FeaturesSection />
-      </SectionWrapper>
-      <SectionWrapper
-        id="pricing"
-        className="w-full py-12 md:py-24 lg:py-32"
-        primaryTitle="Simple"
-        secondaryTitle="Pricing"
-      >
-        <div className="flex gap-5 w-full mt-10">
-          <HoverEffect items={[...pricingPlans]} />
-        </div>
-      </SectionWrapper>
-
-      <SectionWrapper className="text-center">
-        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600">
-          Start Scraping Today
-        </h2>
-        <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl">
-          Join thousands of users who are already leveraging our powerful web
-          scraping platform.
-        </p>
-        <Link
-          className="w-max bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex px-4 py-2 rounded-md items-center"
-          href="/sign-in"
-        >
-          Sign Up Now
-          <ChevronRightIcon className="ml-2 h-4 w-4" />
-        </Link>
-        <p className="text-xs text-muted-foreground">
-          No credit card required. Start with 200 free credits.
-        </p>
       </SectionWrapper>
     </div>
   );
