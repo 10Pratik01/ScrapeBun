@@ -1,15 +1,46 @@
 "use server";
 
-import { getCreditsPack, PackId } from "@/lib/billing";
-import { getAppUrl } from "@/lib/helper";
 import prisma from "@/lib/prisma";
-import { stripe } from "@/lib/stripe/stripe";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 export async function getAvailableCredits() {
-  return 999999;
+  const { userId } = await auth();
+  if (!userId) {
+    return 0;
+  }
+
+  let userBalance = await prisma.userBalance.findUnique({
+    where: { userId },
+  });
+
+  if (!userBalance) {
+    userBalance = await prisma.userBalance.create({
+      data: {
+        userId,
+        credits: 200,
+      }
+    });
+    return userBalance.credits;
+  }
+
+  const now = new Date();
+  const lastRefill = new Date(userBalance.lastRefillAt);
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  if (now.getTime() - lastRefill.getTime() > oneDay) {
+    userBalance = await prisma.userBalance.update({
+      where: { userId },
+      data: {
+        credits: 200,
+        lastRefillAt: now,
+      },
+    });
+  }
+
+  return userBalance.credits;
 }
+
 export async function setupUser() {
   const { userId } = await auth();
 
@@ -27,97 +58,10 @@ export async function setupUser() {
     await prisma.userBalance.create({
       data: {
         userId,
-        credits: 999999,
+        credits: 200,
       },
     });
   }
 
   redirect("/home");
-}
-
-export async function purchaseCredits(packId: PackId) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthenticated");
-  }
-
-  const seletedPack = getCreditsPack(packId);
-
-  if (!seletedPack) {
-    throw new Error("Inavlid package");
-  }
-
-  const priceId = seletedPack?.priceId;
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    invoice_creation: {
-      enabled: true,
-    },
-    success_url: getAppUrl("billing"),
-    cancel_url: getAppUrl("billing"),
-
-    // adding custom details to session info via metadata
-    metadata: {
-      userId,
-      packId,
-    },
-    line_items: [
-      {
-        quantity: 1,
-        price: priceId, // here price refer to priceId from stripe
-      },
-    ],
-  });
-
-  if (!session.url) {
-    throw new Error("Cannot create stripe session");
-  }
-
-  redirect(session.url);
-}
-
-export async function getUserPurchases() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthenticated");
-  }
-
-  return await prisma.userPurchase.findMany({
-    where: {
-      userId,
-    },
-    orderBy: {
-      date: "desc",
-    },
-  });
-}
-
-export async function downloadInvoice(id: string) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthenticated");
-  }
-
-  const purchase = await prisma.userPurchase.findUnique({
-    where: {
-      userId,
-      id,
-    },
-  });
-
-  if (!purchase) {
-    throw new Error("Bad request");
-  }
-
-  const session = await stripe.checkout.sessions.retrieve(purchase.stripeId);
-  if (!session.invoice) {
-    throw new Error("Invoice not found");
-  }
-
-  const invoice = await stripe.invoices.retrieve(session.invoice as string);
-  return invoice.hosted_invoice_url;
 }
