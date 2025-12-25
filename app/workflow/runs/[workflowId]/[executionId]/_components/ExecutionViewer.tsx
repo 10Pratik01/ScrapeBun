@@ -106,9 +106,9 @@ function ExecutionViewer({ initialData }: { initialData: ExecutionData }) {
             label="Status"
             value={
               <div className="font-semibold capitalize flex gap-2 items-center">
-                <PhaseStatusBadge
+                {/* <PhaseStatusBadge
                   status={query.data?.status as ExecutionPhaseStatus}
-                />
+                /> */}
                 <span className="">{query.data?.status}</span>
               </div>
             }

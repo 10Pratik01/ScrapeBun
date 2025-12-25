@@ -21,9 +21,8 @@ import {
   duplicateWorkflowSchemaType,
 } from "@/schema/workflows";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { CopyIcon, Layers2Icon, Loader2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -46,25 +45,23 @@ function DuplicateWorkflowDialog({
       description,
     },
   });
-  const { mutate, isPending } = useMutation({
-    mutationFn: duplicateWorkflow,
-    onSuccess: () => {
-      toast.success("Workflow duplicated", { id: "duplicate-workflow" });
-      setOpen((prev) => !prev);
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to duplicate", {
-        id: "duplicate-workflow",
-      });
-    },
-  });
-
+  const [isPending, startTransition] = React.useTransition();
   const onSubmit = useCallback(
     (values: duplicateWorkflowSchemaType) => {
       toast.loading("Duplicating workflow...", { id: "duplicate-workflow" });
-      mutate(values);
+      startTransition(async () => {
+        try {
+          await duplicateWorkflow(values);
+          toast.success("Workflow duplicated", { id: "duplicate-workflow" });
+          setOpen((prev) => !prev);
+        } catch (error: any) {
+          toast.error(error.message || "Failed to duplicate", {
+            id: "duplicate-workflow",
+          });
+        }
+      });
     },
-    [mutate]
+    []
   );
 
   return (
@@ -92,7 +89,9 @@ function DuplicateWorkflowDialog({
           <Form {...form}>
             <form
               className="space-y-8 w-full"
-              onSubmit={form.handleSubmit(onSubmit)}
+              action={() => {
+                form.handleSubmit(onSubmit)();
+              }}
             >
               <FormField
                 control={form.control}

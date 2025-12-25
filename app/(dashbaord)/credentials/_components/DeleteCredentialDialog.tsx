@@ -12,7 +12,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { useMutation } from "@tanstack/react-query";
 import { deleteCredential } from "@/actions/credentials";
 import { toast } from "sonner";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
@@ -27,17 +26,7 @@ interface Props {
 function DeleteCredentialDialog({ crendentialName, credentialId }: Props) {
   const [confirmText, setConfirmText] = useState("");
   const [open, setOpen] = useState(false);
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteCredential,
-    onSuccess: () => {
-      toast.success("Credential deleted successfully", { id: credentialId });
-      setConfirmText("");
-    },
-    onError: () => {
-      toast.error("Failed to delete credential", { id: credentialId });
-    },
-  });
+  const [isPending, startTransition] = React.useTransition();
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -67,13 +56,23 @@ function DeleteCredentialDialog({ crendentialName, credentialId }: Props) {
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
-            disabled={
-              confirmText !== crendentialName || deleteMutation.isPending
-            }
+            disabled={confirmText !== crendentialName || isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={() => {
               toast.loading("Deleting credential...", { id: credentialId });
-              deleteMutation.mutate(credentialId);
+              startTransition(async () => {
+                try {
+                  await deleteCredential(credentialId);
+                  toast.success("Credential deleted successfully", {
+                    id: credentialId,
+                  });
+                  setConfirmText("");
+                } catch (error) {
+                  toast.error("Failed to delete credential", {
+                    id: credentialId,
+                  });
+                }
+              });
             }}
           >
             Delete

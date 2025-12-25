@@ -13,7 +13,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { useMutation } from "@tanstack/react-query";
 import { deleteWorkflow } from "@/actions/workflows";
 import { toast } from "sonner";
 
@@ -31,17 +30,7 @@ function DeleteWorkflowDialog({
   workflowId,
 }: Props) {
   const [confirmText, setConfirmText] = useState("");
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteWorkflow,
-    onSuccess: () => {
-      toast.success("Workflow deleted successfully", { id: workflowId });
-      setConfirmText("");
-    },
-    onError: () => {
-      toast.error("Failed to delete workflow", { id: workflowId });
-    },
-  });
+  const [isPending, startTransition] = React.useTransition();
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -66,11 +55,21 @@ function DeleteWorkflowDialog({
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
-            disabled={confirmText !== workflowName || deleteMutation.isPending}
+            disabled={confirmText !== workflowName || isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={() => {
               toast.loading("Deleting workflow...", { id: workflowId });
-              deleteMutation.mutate(workflowId);
+              startTransition(async () => {
+                try {
+                  await deleteWorkflow(workflowId);
+                  toast.success("Workflow deleted successfully", {
+                    id: workflowId,
+                  });
+                  setConfirmText("");
+                } catch (error) {
+                  toast.error("Failed to delete workflow", { id: workflowId });
+                }
+              });
             }}
           >
             Delete

@@ -13,22 +13,13 @@ import { CreditsPack, PackId } from "@/lib/billing";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useMutation } from "@tanstack/react-query";
+
 import { purchaseCredits } from "@/actions/billings";
 import { toast } from "sonner";
 
 function CreditsPurchase() {
   const [selectedPack, setSelectedPack] = useState(PackId.MEDIUM);
-
-  const mutation = useMutation({
-    mutationFn: purchaseCredits,
-    onSuccess: () => {
-      toast.success("Credits credited successfully", { id: "purchase" });
-    },
-    onError: () => {
-      toast.success("Something went wrong", { id: "purchase" });
-    },
-  });
+  const [isPending, startTransition] = React.useTransition();
 
   return (
     <Card>
@@ -71,8 +62,19 @@ function CreditsPurchase() {
       <CardFooter>
         <Button
           className="w-full"
-          disabled={mutation.isPending}
-          onClick={() => mutation.mutate(selectedPack)}
+          disabled={isPending}
+          onClick={() => {
+            startTransition(async () => {
+              try {
+                await purchaseCredits(selectedPack);
+                toast.success("Credits credited successfully", {
+                  id: "purchase",
+                });
+              } catch (error) {
+                toast.success("Something went wrong", { id: "purchase" });
+              }
+            });
+          }}
         >
           <CreditCardIcon className="h-5 w-5 mr-2" />
           Purchase credits

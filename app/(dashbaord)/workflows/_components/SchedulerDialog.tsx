@@ -14,11 +14,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
 
 import { CalendarIcon, ClockIcon, TriangleAlertIcon, InfoIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import cronstrue from "cronstrue";
 import parser from "cron-parser";
@@ -44,25 +43,7 @@ function SchedulerDialog({
   const [validCron, setValidCron] = useState(false);
   const [readableCron, setReadableCron] = useState("");
 
-  const mutation = useMutation({
-    mutationFn: updateWorkFlowCron,
-    onSuccess: () => {
-      toast.success("Schedule updated successfully", { id: "cron" });
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Something went wrong", { id: "cron" });
-    },
-  });
-
-  const removeScheduleMutation = useMutation({
-    mutationFn: removeWorkflowSchedule,
-    onSuccess: () => {
-      toast.success("Schedule removed successfully", { id: "cron" });
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Something went wrong", { id: "cron" });
-    },
-  });
+  const [isPending, startTransition] = React.useTransition();
 
   useEffect(() => {
     try {
@@ -169,12 +150,21 @@ function SchedulerDialog({
               <Button
                 className="w-full text-destructive border-destructive hover:text-destructive"
                 variant={"outline"}
-                disabled={
-                  mutation.isPending || removeScheduleMutation.isPending
-                }
+                disabled={isPending}
                 onClick={() => {
                   toast.loading("Removing schedule", { id: "cron" });
-                  removeScheduleMutation.mutate(workflowId);
+                  startTransition(async () => {
+                    try {
+                      await removeWorkflowSchedule(workflowId);
+                      toast.success("Schedule removed successfully", {
+                        id: "cron",
+                      });
+                    } catch (error: any) {
+                      toast.error(error.message || "Something went wrong", {
+                        id: "cron",
+                      });
+                    }
+                  });
                 }}
               >
                 Remove current schedule
@@ -192,12 +182,20 @@ function SchedulerDialog({
           <DialogClose asChild>
             <Button
               className="w-full"
-              disabled={!validCron || mutation.isPending || !cron}
+              disabled={!validCron || isPending || !cron}
               onClick={() => {
                 toast.loading("Saving schedule", { id: "cron" });
-                mutation.mutate({
-                  cron,
-                  id: workflowId,
+                startTransition(async () => {
+                  try {
+                    await updateWorkFlowCron({ id: workflowId, cron });
+                    toast.success("Schedule updated successfully", {
+                      id: "cron",
+                    });
+                  } catch (error: any) {
+                    toast.error(error.message || "Something went wrong", {
+                      id: "cron",
+                    });
+                  }
                 });
               }}
             >
