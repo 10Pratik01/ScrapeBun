@@ -52,10 +52,14 @@ function Topbar({
         {!hideButtons && (
           <Fragment>
             <OptimizationButton />
-            {!isPublished && <PublishButton workflowId={workflowId} />}
             <ExecuteButton workflowId={workflowId} isPublished={isPublished} creditsCost={creditsCost} />
             <SaveButton workflowId={workflowId} />
-            {isPublished && <UnPublishButton workflowId={workflowId} />}
+            {/* Fixed position for publish/unpublish - always shows one or the other */}
+            {isPublished ? (
+              <UnPublishButton workflowId={workflowId} />
+            ) : (
+              <PublishButton workflowId={workflowId} />
+            )}
           </Fragment>
         )}
       </div>

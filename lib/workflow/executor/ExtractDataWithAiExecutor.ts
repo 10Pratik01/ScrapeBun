@@ -17,8 +17,8 @@ export async function ExtractDataWithAiExecutor(
       return { type: "fail", error: "Content input is missing" };
     }
 
-    const prompt = env.getInput("Prompt");
-    if (!prompt) {
+    const userPrompt = env.getInput("Prompt");
+    if (!userPrompt) {
       return { type: "fail", error: "Prompt input is missing" };
     }
 
@@ -37,6 +37,17 @@ export async function ExtractDataWithAiExecutor(
 
     const ai = new GoogleGenAI({ apiKey });
 
+    // Built-in rules for consistent JSON output
+    const systemRules = `IMPORTANT RULES:
+• Output ONLY a valid JSON array
+• No explanations
+• No markdown
+• If nothing is found, return []
+
+USER PROMPT:
+${userPrompt}`;
+
+    // Send content and enhanced prompt to AI
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: [
@@ -46,7 +57,7 @@ export async function ExtractDataWithAiExecutor(
         },
         {
           role: "user",
-          parts: [{ text: prompt }],
+          parts: [{ text: systemRules }],
         },
       ],
     });
