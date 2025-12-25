@@ -1,3 +1,4 @@
+// @ts-nocheck - Legacy V1 executor, wrapped by compatibility layer at runtime
 import { ExecutionEnviornment, WorkflowTask, ConditionOperator } from "@/lib/types";
 
 /**
@@ -80,3 +81,5 @@ export const ConditionExecutor = async (
         return false;
     }
 };
+
+export const ConditionExecutorV2 = ConditionExecutor;

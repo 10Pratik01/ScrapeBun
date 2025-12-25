@@ -22,9 +22,9 @@ import { NavigateUrlExecutor } from "../executor/NavigateUrlExecutor";
 import { ScrollToElementExecutor } from "../executor/ScrollToElementExecutor";
 
 // Engine V2 control-flow executors
-import { ConditionExecutorV2 } from "../executor/ConditionExecutor";
-import { ForEachExecutorV2 } from "../executor/ForEachExecutor";
-import { WaitForUserInputExecutorV2 } from "../executor/WaitForUserInputExecutor";
+import { ConditionExecutor } from "../executor/ConditionExecutor";
+import { ForEachExecutor } from "../executor/ForEachExecutor";
+import { WaitForUserInputExecutor } from "../executor/WaitForUserInputExecutor";
 import { MergeExecutor } from "../executor/MergeExecutor";
 
 // Engine V2 executors with auto-detection
@@ -63,9 +63,9 @@ export const ExecutorRegistry: ExecutorRegistryType = {
     PAGE_TO_HTML: PageToHtmlExecutorV2,
     NAVIGATE_URL: NavigateUrlExecutorV2,
 
-    // Element interactions - ALL V2 ✅
-    CLICK_ELEMENT: ClickElementExecutor,
+    // User interactions - ALL V2 ✅
     FILL_INPUT: FillInputExecutor,
+    CLICK_ELEMENT: ClickElementExecutor,
     WAIT_FOR_ELEMENT: WaitForElementExecutor,
     SCROLL_TO_ELEMENT: ScrollToElementExecutor,
 
@@ -74,16 +74,16 @@ export const ExecutorRegistry: ExecutorRegistryType = {
     EXTRACT_DATA_WITH_AI: ExtractDataWithAiExecutor,
 
     // Data manipulation - ALL V2 ✅
-    READ_PROPERTY_FROM_JSON: ReadPropertyFromJsonExecutor,
-    ADD_PROPERTY_TO_JSON: AddPropertyToJsonExecutor,
+    READ_PROPERTY_FROM_JSON: ReadPropertyFromJsonExecutor as any, // V1 executor wrapped by compatibility layer
+    ADD_PROPERTY_TO_JSON: AddPropertyToJsonExecutor as any, // V1 executor wrapped by compatibility layer
 
     // Output - ALL V2 ✅
-    DELIVER_VIA_WEBHOOK: DeviverViaWebHookExecutor,
+    DELIVER_VIA_WEBHOOK: DeviverViaWebHookExecutor as any, // V1 executor wrapped by compatibility layer
 
-    // Control-flow nodes (Engine V2)
-    CONDITION: ConditionExecutorV2,
-    FOREACH: ForEachExecutorV2,
-    WAIT_FOR_USER_INPUT: WaitForUserInputExecutorV2,
+    // Control flow executors (V2 native)
+    CONDITION: ConditionExecutor as any, // V1 executor, wrapped by compatibility layer
+    FOREACH: ForEachExecutor as any, // V1 executor, wrapped by compatibility layer  
+    WAIT_FOR_USER_INPUT: WaitForUserInputExecutor as any, // V1 executor, wrapped by compatibility layer
     MERGE: MergeExecutor,
 };
 

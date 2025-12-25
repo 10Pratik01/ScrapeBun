@@ -3,6 +3,8 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { PackId, getCreditsPack } from "@/lib/billing";
+import { UserBalance } from "@prisma/client";
 
 export async function getAvailableCredits() {
   const { userId } = await auth();
@@ -10,7 +12,7 @@ export async function getAvailableCredits() {
     return 0;
   }
 
-  let userBalance = await prisma.userBalance.findUnique({
+  let userBalance: UserBalance | null = await prisma.userBalance.findUnique({
     where: { userId },
   });
 
@@ -64,4 +66,41 @@ export async function setupUser() {
   }
 
   redirect("/home");
+}
+
+export async function purchaseCredits(packId: PackId) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthenticated");
+  }
+
+  // Get the pack details
+  const pack = getCreditsPack(packId);
+  if (!pack) {
+    throw new Error("Invalid pack");
+  }
+
+  // TODO: Implement Stripe payment integration
+  // For now, just add credits directly
+  const userBalance = await prisma.userBalance.upsert({
+    where: { userId },
+    create: {
+      userId,
+      credits: pack.credits,
+    },
+    update: {
+      credits: {
+        increment: pack.credits,
+      },
+    },
+  });
+
+  return userBalance.credits;
+}
+
+export async function downloadInvoice(id: string): Promise<string> {
+  // TODO: Implement invoice download functionality
+  // For now, return a placeholder URL
+  return "#";
 }

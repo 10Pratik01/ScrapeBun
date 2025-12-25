@@ -51,7 +51,7 @@ export function analyzeWorkflowOptimization(nodes: Node[], edges?: Edge[]): Opti
     const terminalNodeTypes = [TaskType.DELIVER_VIA_WEBHOOK];
     const deadEndNodes = nodes.filter(node => {
         const hasOutgoing = workflowEdges.some(e => e.source === node.id);
-        const isTerminal = terminalNodeTypes.includes(node.data?.type);
+        const isTerminal = terminalNodeTypes.includes(node.data?.type as TaskType);
         return !hasOutgoing && !isTerminal && node.data?.type !== TaskType.LAUNCH_BROWSER;
     });
 

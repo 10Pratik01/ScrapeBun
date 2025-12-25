@@ -69,7 +69,7 @@ export async function MergeExecutor(env: ExecutionEnv): Promise<StepResult> {
             },
         };
     } catch (error: any) {
-        env.log.error("Error in MERGE executor:", error.message);
+        env.log.error(`Error in MERGE executor: ${error.message}`);
         return {
             type: "fail",
             error: error.message,

@@ -71,8 +71,8 @@ async function StatsCards({ selectedPeriod }: { selectedPeriod: Period }) {
         icon={CirclePlayIcon}
       />
       <StatsCard
-        title="Phase Executions"
-        value={data.phaseExecutions}
+        title="Step Executions"
+        value={data.stepExecutions}
         icon={WaypointsIcon}
       />
       <StatsCard

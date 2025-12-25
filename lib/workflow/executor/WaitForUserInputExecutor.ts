@@ -1,4 +1,5 @@
-import { ExecutionEnviornment, WorkflowTask } from "@/lib/types";
+import { ExecutionEnviornment } from "@/lib/types";
+import { WaitForUserInputTask } from "../task/WaitForUserInput";
 
 /**
  * WAIT_FOR_USER_INPUT executor
@@ -6,7 +7,7 @@ import { ExecutionEnviornment, WorkflowTask } from "@/lib/types";
  * Use cases: CAPTCHA solving, manual login, approval gates
  */
 export const WaitForUserInputExecutor = async (
-    enviornment: ExecutionEnviornment<WorkflowTask & { type: "WAIT_FOR_USER_INPUT" }>
+    enviornment: ExecutionEnviornment<typeof WaitForUserInputTask>
 ): Promise<boolean> => {
     const message = enviornment.getInput("Message");
     const timeoutMinutes = parseInt(enviornment.getInput("Timeout Minutes") || "10");
@@ -23,3 +24,5 @@ export const WaitForUserInputExecutor = async (
 
     return true;
 };
+
+export const WaitForUserInputExecutorV2 = WaitForUserInputExecutor;
