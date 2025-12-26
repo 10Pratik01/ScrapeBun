@@ -33,13 +33,28 @@ export async function LaunchBrowserExecutor(
     if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
       env.log.info("Using @sparticuz/chromium for serverless environment");
       
-      const chromium = await import("@sparticuz/chromium");
-      const puppeteerCore = await import("puppeteer-core");
-      
-      launchOptions.executablePath = await chromium.default.executablePath();
-      launchOptions.args = chromium.default.args;
-      
-      browser = await puppeteerCore.default.launch(launchOptions);
+      try {
+        const chromium = await import("@sparticuz/chromium");
+        const puppeteerCore = await import("puppeteer-core");
+        
+        // Get the executable path
+        const executablePath = await chromium.default.executablePath();
+        env.log.info(`Chromium executable path: ${executablePath}`);
+        
+        launchOptions.executablePath = executablePath;
+        launchOptions.args = [
+          ...chromium.default.args,
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--disable-setuid-sandbox',
+          '--no-sandbox',
+        ];
+        
+        browser = await puppeteerCore.default.launch(launchOptions);
+      } catch (error: any) {
+        env.log.error(`Failed to launch with @sparticuz/chromium: ${error.message}`);
+        throw error;
+      }
     } else {
       // Use regular puppeteer in development
       env.log.info("Using regular puppeteer for local development");
