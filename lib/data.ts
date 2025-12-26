@@ -99,11 +99,6 @@ export const headerRoutes = [
     className: "",
   },
   {
-    title: "Pricing",
-    href: "#pricing",
-    className: "",
-  },
-  {
     title: "Get Started",
     href: "/sign-in",
     className: "",
