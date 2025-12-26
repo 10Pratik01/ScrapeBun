@@ -1,5 +1,4 @@
 import { ExecutionEnv, StepResult } from "../engine/types";
-import puppeteer from "puppeteer";
 
 export async function LaunchBrowserExecutor(
   env: ExecutionEnv
@@ -28,32 +27,25 @@ export async function LaunchBrowserExecutor(
       ],
     };
 
-    // Try to use system Chrome in production (Vercel, AWS, etc.)
-    if (process.env.NODE_ENV === "production") {
-      // Common paths for Chrome in production environments
-      const chromePaths = [
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/chromium",
-        process.env.CHROME_PATH, // Allow custom path via env variable
-      ].filter(Boolean);
+    let browser: any;
 
-      // Try each path
-      for (const path of chromePaths) {
-        try {
-          const fs = require("fs");
-          if (path && fs.existsSync(path)) {
-            launchOptions.executablePath = path;
-            env.log.info(`Using Chrome at: ${path}`);
-            break;
-          }
-        } catch (e) {
-          // Continue to next path
-        }
-      }
+    // Use @sparticuz/chromium in production (Vercel, AWS Lambda, etc.)
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+      env.log.info("Using @sparticuz/chromium for serverless environment");
+      
+      const chromium = await import("@sparticuz/chromium");
+      const puppeteerCore = await import("puppeteer-core");
+      
+      launchOptions.executablePath = await chromium.default.executablePath();
+      launchOptions.args = chromium.default.args;
+      
+      browser = await puppeteerCore.default.launch(launchOptions);
+    } else {
+      // Use regular puppeteer in development
+      env.log.info("Using regular puppeteer for local development");
+      const puppeteer = await import("puppeteer");
+      browser = await puppeteer.default.launch(launchOptions);
     }
-
-    const browser = await puppeteer.launch(launchOptions);
 
     env.log.info("Browser started successfully");
     env.setBrowser(browser);
