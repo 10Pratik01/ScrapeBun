@@ -10,6 +10,7 @@ export const ConditionExecutorV2: StepExecutor = async (
 ): Promise<StepResult> => {
     const leftValue = env.getInput("Left Value") || "";
     const operator = env.getInput("Operator") as ConditionOperator;
+    
     const rightValue = env.getInput("Right Value") || "";
 
     env.log.info(
