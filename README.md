@@ -437,9 +437,21 @@ scrapBun/
       <a href="https://github.com/10Pratik01">
         <img src="https://github.com/10Pratik01.png" width="100px;" alt="Pratik Patil"/><br />
         <sub><b>Pratik Patil</b></sub>
-      </a><br />
-      <sub>Creator & Lead Developer</sub>
+      </a>
+      <br />
     </td>
+    <td>
+    <a href="https://github.com/viraj-ap">
+        <img src="https://github.com/viraj-ap.png" width="100px;" alt="Viraj Pawar"/><br />
+        <sub><b>Viraj Pawar</b></sub>
+      </a>
+      </td> 
+       <td>
+    <a href="https://github.com/om-thanage">
+        <img src="https://github.com/om-thanage.png" width="100px;" alt="Om Thanage"/><br />
+        <sub><b>Om Thanage</b></sub>
+      </a>
+      </td> 
   </tr>
 </table>
 
