@@ -12,6 +12,7 @@ export function datesToDurationString(
   start: Date | null | undefined
 ) {
   if (!start || !end) return null;
+  
 
   const timeElapsed = end.getTime() - start.getTime();
   if (timeElapsed < 1000) {
